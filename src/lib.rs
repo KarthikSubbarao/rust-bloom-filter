@@ -39,7 +39,7 @@ pub struct Bloom<T: ?Sized> {
     bit_vec: BitVec,
     bitmap_bits: u64,
     k_num: u32,
-    sips: [SipHasher13; 2],
+    pub sips: [SipHasher13; 2],
 
     _phantom: PhantomData<T>,
 }
@@ -113,6 +113,21 @@ impl<T: ?Sized> Bloom<T> {
             SipHasher13::new_with_keys(sip_keys[0].0, sip_keys[0].1),
             SipHasher13::new_with_keys(sip_keys[1].0, sip_keys[1].1),
         ];
+        Self {
+            bit_vec,
+            bitmap_bits,
+            k_num,
+            sips,
+            _phantom: PhantomData,
+        }
+    }
+
+    pub fn from_bit_vec_with_sips(
+        bit_vec: BitVec,
+        bitmap_bits: u64,
+        k_num: u32,
+        sips: [SipHasher13; 2],
+    ) -> Self {
         Self {
             bit_vec,
             bitmap_bits,
