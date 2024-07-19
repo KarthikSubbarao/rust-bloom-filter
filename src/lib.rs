@@ -196,18 +196,20 @@ impl<T: ?Sized> Bloom<T> {
 
     /// Check if an item is present in the set.
     /// There can be false positives, but no false negatives.
-    pub fn optimized_check(&self, item: &T, map: &mut Vec<Option<u64>>, hashes: &mut [u64; 2]) -> bool
+    pub fn optimized_check(&self, item: &T, map: &mut Vec<u64>, hashes: &mut [u64; 2]) -> bool
     where
         T: Hash,
     {
+        let hash_len = map.len() as u32;
         for k_i in 0..self.k_num {
-            if let Some(hash_res) = map[k_i as usize] {
+            if hash_len > k_i  {
+                let hash_res = map[k_i as usize];
                 if self.inner_check(hash_res) == false {
                     return false;
                 }
             } else {
                 let hash_result = self.bloom_hash(hashes, item, k_i);
-                map.insert(k_i as usize, Some(hash_result));
+                map.push(hash_result);
                 if self.inner_check(hash_result) == false {
                     return false;
                 }
