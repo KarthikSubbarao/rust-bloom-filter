@@ -165,15 +165,16 @@ impl<T: ?Sized> Bloom<T> {
     {
         let mut hashes = [0u64, 0u64];
         for k_i in 0..self.k_num {
-            let mut hash_result;
             if let Some(hash_res) = map[k_i as usize] {
-                hash_result = hash_res;
+                if self.inner_check(hash_res) == false {
+                    return false;
+                }
             } else {
-                hash_result = self.bloom_hash(&mut hashes, item, k_i);
+                let hash_result = self.bloom_hash(&mut hashes, item, k_i);
                 map.insert(k_i as usize, Some(hash_result));
-            }
-            if self.inner_check(hash_result) == false {
-                return false;
+                if self.inner_check(hash_result) == false {
+                    return false;
+                }
             }
         }
         true
