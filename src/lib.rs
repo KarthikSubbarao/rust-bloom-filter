@@ -159,16 +159,49 @@ impl<T: ?Sized> Bloom<T> {
 
     /// Check if an item is present in the set.
     /// There can be false positives, but no false negatives.
+    pub fn optimized_check(&self, item: &T, map: &mut Vec<Option<u64>>) -> bool
+    where
+        T: Hash,
+    {
+        let mut hashes = [0u64, 0u64];
+        for k_i in 0..self.k_num {
+            let mut hash_result;
+            if let Some(hash_res) = map[k_i as usize] {
+                hash_result = hash_res;
+            } else {
+                hash_result = self.bloom_hash(&mut hashes, item, k_i);
+                map.insert(k_i as usize, Some(hash_result));
+            }
+            if self.inner_check(hash_result) == false {
+                return false;
+            }
+        }
+        true
+    }
+
+    /// Check if an item is present in the set.
+    /// There can be false positives, but no false negatives.
     pub fn check(&self, item: &T) -> bool
     where
         T: Hash,
     {
         let mut hashes = [0u64, 0u64];
         for k_i in 0..self.k_num {
-            let bit_offset = (self.bloom_hash(&mut hashes, item, k_i) % self.bitmap_bits) as usize;
-            if self.bit_vec.get(bit_offset).unwrap() == false {
+            let hash_result = self.bloom_hash(&mut hashes, item, k_i);
+            if self.inner_check(hash_result) == false {
                 return false;
             }
+        }
+        true
+    }
+
+    pub fn inner_check(&self, hash_result: u64) -> bool
+    where
+        T: Hash,
+    {
+        let bit_offset = (hash_result % self.bitmap_bits) as usize;
+        if self.bit_vec.get(bit_offset).unwrap() == false {
+            return false;
         }
         true
     }
