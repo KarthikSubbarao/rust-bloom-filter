@@ -100,6 +100,28 @@ impl<T: ?Sized> Bloom<T> {
         Bloom::new_with_seed(bitmap_size, items_count, seed)
     }
 
+    pub fn new_for_fp_rate_with_sips(items_count: usize, fp_p: f64, sips: [SipHasher13; 2]) -> Self {
+        let bitmap_size = Self::compute_bitmap_size(items_count, fp_p);
+        Bloom::new_with_sips(bitmap_size, items_count, sips)
+    }
+
+    pub fn new_with_sips(bitmap_size: usize, items_count: usize, sips: [SipHasher13; 2]) -> Self {
+        assert!(bitmap_size > 0 && items_count > 0);
+        let bitmap_bits = u64::try_from(bitmap_size)
+            .unwrap()
+            .checked_mul(8u64)
+            .unwrap();
+        let k_num = Self::optimal_k_num(bitmap_bits, items_count);
+        let bitmap = BitVec::from_elem(usize::try_from(bitmap_bits).unwrap(), false);
+        Self {
+            bit_vec: bitmap,
+            bitmap_bits,
+            k_num,
+            sips,
+            _phantom: PhantomData,
+        }
+    }
+
     /// Create a bloom filter structure from a previous state given as a
     /// `ByteVec` structure. The state is assumed to be retrieved from an
     /// existing bloom filter.
